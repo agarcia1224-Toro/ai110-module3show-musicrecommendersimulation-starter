@@ -22,15 +22,15 @@ Real-world music recommenders can combine song descriptions with listening histo
 **Features used in the simulation**
 
 - `Song`: `id`, `title`, `artist`, `genre`, `mood`, `energy`, `valence`. The CSV also has `tempo_bpm`, `danceability`, and `acousticness`, available for future scoring improvements.
-- `UserProfile` (dictionary): `favorite_genre`, `favorite_mood`, `target_energy`, and `target_valence`. For example: `{"favorite_genre": "rock", "favorite_mood": "intense", "target_energy": 0.90, "target_valence": 0.50}`. The numeric targets use the same 0–1 scale as the song data.
+- User preferences (dictionary): `genre`, `mood`, `energy`, and `valence`. For example: `{"genre": "rock", "mood": "intense", "energy": 0.90, "valence": 0.50}`. The numeric targets use the same 0–1 scale as the song data.
 
 **Algorithm recipe**
 
-For each song, add 2 points for a genre match and 1 point for a mood match. Add up to 1 point each for energy and valence similarity, calculated as `1 − |song value − target value|`. This rewards closeness rather than treating a higher value as automatically better. Score every song in the CSV independently, sort by score from highest to lowest, and return the top K songs. Scoring measures how well one candidate fits; ranking compares candidates and orders the list. With the example rock/intense profile, both intense rock songs can score well, while their energy and valence still help distinguish them from one another.
+The tested weight-shift recipe gives 1 point for a genre match and 1 point for a mood match. Energy earns up to 2 points and valence up to 1 point, based on closeness: `weight × (1 − |song value − target value|)`. This rewards closeness rather than treating a higher value as automatically better. Score every song in the CSV independently, sort by score from highest to lowest, and return the top K songs. Scoring measures how well one candidate fits; ranking compares candidates and orders the list. The experiment halves genre's influence and doubles energy's influence compared with the original weights.
 
 **Data flow:** User preferences → loop over CSV songs and calculate each score → sort scores → return top K recommendations.
 
-**Potential bias:** Genre receives twice the weight of mood, so the system may favor a genre match over a song with a stronger mood and audio-feature fit. Exact tag matching can also miss songs that feel similar but use different labels.
+**Potential bias:** Even after reducing genre's weight, fixed exact-match points can outweigh or ignore a preference if its label is missing, as with the tested “sad” mood. The tiny catalog also means a profile can only retrieve examples that happen to be present.
 
 ---
 
@@ -71,27 +71,27 @@ You can add more tests in `tests/test_recommender.py`.
 
 ## Sample Recommendation Output
 
-For the default pop/happy profile (target energy 0.8 and valence 0.8):
+For the high-energy pop profile (target energy 0.9 and valence 0.85), after the weight-shift experiment:
 
 ```
 Loaded songs: 17
 
 Top recommendations:
 
-1. Sunrise City - Neon Echo (Score: 4.94)
-   Reasons: genre match (+2.0); mood match (+1.0); energy similarity (+0.98); valence similarity (+0.96)
+1. Sunrise City - Neon Echo (Score: 4.83)
+   Reasons: genre match (+1.0); mood match (+1.0); energy similarity (+1.84); valence similarity (+0.99)
 
-2. Gym Hero - Max Pulse (Score: 3.84)
-   Reasons: genre match (+2.0); energy similarity (+0.87); valence similarity (+0.97)
+2. Gym Hero - Max Pulse (Score: 3.86)
+   Reasons: genre match (+1.0); energy similarity (+1.94); valence similarity (+0.92)
 
-3. Rooftop Lights - Indigo Parade (Score: 2.95)
-   Reasons: mood match (+1.0); energy similarity (+0.96); valence similarity (+0.99)
+3. Rooftop Lights - Indigo Parade (Score: 3.68)
+   Reasons: mood match (+1.0); energy similarity (+1.72); valence similarity (+0.96)
 
-4. Velvet Groove - The Pocket (Score: 1.91)
-   Reasons: energy similarity (+0.92); valence similarity (+0.99)
+4. Desert Bloom - Sola Luna (Score: 2.87)
+   Reasons: energy similarity (+1.90); valence similarity (+0.97)
 
-5. Corner Cypher - Northbound (Score: 1.90)
-   Reasons: energy similarity (+0.98); valence similarity (+0.92)
+5. Corner Cypher - Northbound (Score: 2.63)
+   Reasons: energy similarity (+1.76); valence similarity (+0.87)
 ```
 
 **Screenshot or video** *(optional)*: <!-- Insert a screenshot or demo video link here -->

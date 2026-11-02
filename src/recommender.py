@@ -65,19 +65,19 @@ def load_songs(csv_path: str) -> List[Dict]:
     return songs
 
 def score_song(user_prefs: Dict, song: Dict) -> Tuple[float, List[str]]:
-    """Score one song and return its score with human-readable reasons."""
+    """Score one song with match points and similarity rewards, returning reasons."""
     score = 0.0
     reasons = []
 
     if song["genre"].casefold() == user_prefs["genre"].casefold():
-        score += 2.0
-        reasons.append("genre match (+2.0)")
+        score += 1.0
+        reasons.append("genre match (+1.0)")
     if song["mood"].casefold() == user_prefs["mood"].casefold():
         score += 1.0
         reasons.append("mood match (+1.0)")
 
     if "energy" in user_prefs:
-        energy_points = max(0.0, 1.0 - abs(song["energy"] - float(user_prefs["energy"])))
+        energy_points = 2.0 * max(0.0, 1.0 - abs(song["energy"] - float(user_prefs["energy"])))
         score += energy_points
         reasons.append(f"energy similarity (+{energy_points:.2f})")
     if "valence" in user_prefs:
